@@ -1,6 +1,6 @@
 import os
 import torch
-from AlexNet import *
+from model_framework.AlexNet import *
 from torch.utils.data import DataLoader
 from datasets.MNIST.MNIST_dataset import *
 
@@ -81,5 +81,5 @@ def train_process(data_loader, model, iteration, loss_function, optimizer, use_c
         torch.save(model.state_dict(), os.path.join(os.getcwd(), f'torch_models/{save_model}.pt'))
 
 
-# train_process(train_loader, model, iterations, loss_function, optimizer, use_cuda, model_name)
-# test_loop(test_loader, model, loss_function, use_cuda, model_name)
+train_process(train_loader, model, iterations, loss_function, optimizer, use_cuda, model_name)
+test_loop(test_loader, model, loss_function, use_cuda, model_name)
