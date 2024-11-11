@@ -1,6 +1,6 @@
 import os
 import torch
-from model_framework.AlexNet import *
+from model_framework.AlexNet import AlexNet
 from torch.utils.data import DataLoader
 from datasets.MNIST.MNIST_dataset import *
 
@@ -18,7 +18,7 @@ test_loader = DataLoader(dataset=test_set, batch_size=batch_size)
 model = AlexNet(in_channels=1, out_features=10)
 loss_function = torch.nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-model_name = 'AlexNet_MNIST'
+model_name = 'alexnet_mnist'
 
 
 def train_loop(data_loader, model, loss_function, optimizer, use_cuda):
@@ -28,7 +28,7 @@ def train_loop(data_loader, model, loss_function, optimizer, use_cuda):
     model.train()
     for batch, (X, Y) in enumerate(data_loader):
         if use_cuda:
-            X, Y, model, loss_function = X.to('cuda'), Y.to('cuda'), model.to('cuda'), loss_function.to('cuda')
+            X, Y, model, loss_function = X.cuda(), Y.cuda(), model.cuda(), loss_function.cuda()
         # Compute prediction and loss
         pred = model(X)
         loss = loss_function(pred, Y)
@@ -59,7 +59,7 @@ def test_loop(data_loader, model, loss_function, use_cuda, load_model=None):
     with torch.no_grad():
         for X, Y in data_loader:
             if use_cuda:
-                X, Y, model, loss_function = X.to('cuda'), Y.to('cuda'), model.to('cuda'), loss_function.to('cuda')
+                X, Y, model, loss_function = X.cuda(), Y.cuda(), model.cuda(), loss_function.cuda()
             pred = model(X)
             test_loss += loss_function(pred, Y).item()
             correct += (pred.argmax(1) == Y.argmax(1)).type(torch.float).sum().item()
@@ -67,18 +67,24 @@ def test_loop(data_loader, model, loss_function, use_cuda, load_model=None):
     test_loss /= num_batches
     correct /= size
     print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
+    
+    with torch.no_grad():
+        dataset = data_loader.dataset
+        input_X, input_Y = dataset[0]
+        if use_cuda:
+            input_X, input_Y, model = input_X.cuda(), input_Y.cuda(), model.cuda()
+        torch.onnx.export(model, input_X.unsqueeze(0), f'onnx_models/{load_model}.onnx', opset_version=18, input_names=['input'], output_names=['output'])
 
 
 def train_process(data_loader, model, iteration, loss_function, optimizer, use_cuda, save_model=None):
     for epoch in range(iteration):
         print(f'epoch {epoch}:')
         train_loop(data_loader, model, loss_function, optimizer, use_cuda)
-    
-    if use_cuda:
-        model = model.cpu()
 
     if save_model:
-        torch.save(model.state_dict(), os.path.join(os.getcwd(), f'torch_models/{save_model}.pt'))
+        model.eval()
+        with torch.no_grad():
+            torch.save(model.state_dict(), os.path.join(os.getcwd(), f'torch_models/{save_model}.pt'))
 
 
 train_process(train_loader, model, iterations, loss_function, optimizer, use_cuda, model_name)

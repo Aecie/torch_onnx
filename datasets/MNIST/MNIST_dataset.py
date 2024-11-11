@@ -8,7 +8,7 @@ from torch.utils.data import Dataset
 
 
 class MNIST_Dataset(Dataset):
-    def __init__(self, is_train: bool=True, image_transform=None, label_transform=None):
+    def __init__(self, is_train: bool=True):
         super().__init__()
         self.is_train = is_train
         self.__one_hot_encoder__ = np.eye(10)
@@ -54,5 +54,3 @@ class MNIST_Dataset(Dataset):
             images[i][:] = img
         
         return torch.from_numpy(np.array(images, dtype=np.float32).reshape((-1, 1, 28, 28))), torch.from_numpy(np.array(labels, dtype=np.float32).reshape((-1, 10))*1.)
-
-
