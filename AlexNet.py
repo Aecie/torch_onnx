@@ -1,5 +1,4 @@
 import torch
-import numpy as np
 
 
 class AlexNet(torch.nn.Module):
@@ -38,15 +37,3 @@ class AlexNet(torch.nn.Module):
         x1 = self.__feature_extractor__(x)
         y = self.__classifier__(x1)
         return y
-
-
-# import torch
-# from torchvision import transforms
-# X = torch.from_numpy(np.ones(shape=(64, 1, 128, 128), dtype=np.float32)).cuda()
-# X1 = torch.nn.functional.interpolate(X, (128, 128))
-# print(X1.shape)
-# X = X.cuda()
-# model = AlexNet(in_channels=1, out_features=10).cuda()
-# pred = model(X)
-
-# print(X.shape, pred.shape)
