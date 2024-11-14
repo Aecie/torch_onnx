@@ -48,7 +48,7 @@ def test_loop(data_loader, model, loss_function, use_cuda, load_model=None):
     # Set the model to evaluation mode - important for batch normalization and dropout layers
     # Unnecessary in this situation but added for best practices
     if load_model is not None:
-        model.load_state_dict(torch.load(f'torch_models/{load_model}.pt', weights_only=True))
+        model.load_state_dict(torch.load(f'../torch_models/{load_model}.pt', weights_only=True))
     model.eval()
     size = len(data_loader.dataset)
     num_batches = len(data_loader)
@@ -73,7 +73,7 @@ def test_loop(data_loader, model, loss_function, use_cuda, load_model=None):
         input_X, input_Y = dataset[0]
         if use_cuda:
             input_X, input_Y, model = input_X.cuda(), input_Y.cuda(), model.cuda()
-        torch.onnx.export(model, input_X.unsqueeze(0), f'onnx_models/{load_model}.onnx', opset_version=18, input_names=['input'], output_names=['output'])
+        torch.onnx.export(model, input_X.unsqueeze(0), f'../onnx_models/{load_model}.onnx', opset_version=18, input_names=['input'], output_names=['output'])
 
 
 def train_process(data_loader, model, iteration, loss_function, optimizer, use_cuda, save_model=None):
@@ -84,8 +84,12 @@ def train_process(data_loader, model, iteration, loss_function, optimizer, use_c
     if save_model:
         model.eval()
         with torch.no_grad():
-            torch.save(model.state_dict(), os.path.join(os.getcwd(), f'torch_models/{save_model}.pt'))
+            torch.save(model.state_dict(), os.path.join(os.getcwd(), f'../torch_models/{save_model}.pt'))
 
 
+if not os.path.exists('./../onnx_models'):
+    os.mkdir('./../onnx_models')
+if not os.path.exists('./../torch_models'):
+    os.mkdir('./../torch_models')
 train_process(train_loader, model, iterations, loss_function, optimizer, use_cuda, model_name)
 test_loop(test_loader, model, loss_function, use_cuda, model_name)
