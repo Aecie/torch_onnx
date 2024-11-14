@@ -1,24 +1,25 @@
 import os
+import onnx
 import torch
-from model_framework.AlexNet import AlexNet
+from model_configs.train_infer import config
 from torch.utils.data import DataLoader
-from datasets.MNIST.MNIST_dataset import *
 
+train_config = config['AlexNet_MNIST']
 
-batch_size = 64
-iterations = 20
-learning_rate = 1e-5
-use_cuda = torch.cuda.is_available()
+model_name = train_config['model_name']
+batch_size = train_config['batch_size']
+iterations = train_config['iterations']
+learning_rate = train_config['learning_rate']
+use_cuda = train_config['use_cuda']
 
-train_set = MNIST_Dataset(is_train=True)
-test_set = MNIST_Dataset(is_train=False)
+train_set = train_config['train_set']
+test_set = train_config['test_set']
 train_loader = DataLoader(dataset=train_set, batch_size=batch_size)
 test_loader = DataLoader(dataset=test_set, batch_size=batch_size)
 
-model = AlexNet(in_channels=1, out_features=10)
-loss_function = torch.nn.MSELoss()
+model = train_config['model']
+loss_function = train_config['loss_function']
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-model_name = 'alexnet_mnist'
 
 
 def train_loop(data_loader, model, loss_function, optimizer, use_cuda):
@@ -48,7 +49,7 @@ def test_loop(data_loader, model, loss_function, use_cuda, load_model=None):
     # Set the model to evaluation mode - important for batch normalization and dropout layers
     # Unnecessary in this situation but added for best practices
     if load_model is not None:
-        model.load_state_dict(torch.load(f'../torch_models/{load_model}.pt', weights_only=True))
+        model.load_state_dict(torch.load(f'{config["torch_model_space"]}/{load_model}.pt', weights_only=True))
     model.eval()
     size = len(data_loader.dataset)
     num_batches = len(data_loader)
@@ -73,7 +74,7 @@ def test_loop(data_loader, model, loss_function, use_cuda, load_model=None):
         input_X, input_Y = dataset[0]
         if use_cuda:
             input_X, input_Y, model = input_X.cuda(), input_Y.cuda(), model.cuda()
-        torch.onnx.export(model, input_X.unsqueeze(0), f'../onnx_models/{load_model}.onnx', opset_version=18, input_names=['input'], output_names=['output'])
+        torch.onnx.export(model, input_X.unsqueeze(0), f'{config["onnx_model_space"]}/{load_model}.onnx', opset_version=18, input_names=['input'], output_names=['output'])
 
 
 def train_process(data_loader, model, iteration, loss_function, optimizer, use_cuda, save_model=None):
@@ -84,12 +85,12 @@ def train_process(data_loader, model, iteration, loss_function, optimizer, use_c
     if save_model:
         model.eval()
         with torch.no_grad():
-            torch.save(model.state_dict(), os.path.join(os.getcwd(), f'../torch_models/{save_model}.pt'))
+            torch.save(model.state_dict(), f'{config["torch_model_space"]}/{save_model}.pt')
 
 
-if not os.path.exists('./../onnx_models'):
-    os.mkdir('./../onnx_models')
-if not os.path.exists('./../torch_models'):
-    os.mkdir('./../torch_models')
+if not os.path.exists(config['onnx_model_space']):
+    os.mkdir(config['onnx_model_space'])
+if not os.path.exists(config['torch_model_space']):
+    os.mkdir(config['torch_model_space'])
 train_process(train_loader, model, iterations, loss_function, optimizer, use_cuda, model_name)
 test_loop(test_loader, model, loss_function, use_cuda, model_name)
