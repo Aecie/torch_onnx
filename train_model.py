@@ -19,10 +19,9 @@ class ModelTrainer():
         self.learning_rate = train_config['learning_rate']
         self.use_cuda = train_config['use_cuda']
 
-        self.train_set = train_config['train_set']
-        self.test_set = train_config['test_set']
-        self.train_loader = DataLoader(dataset=self.train_set, batch_size=self.batch_size)
-        self.test_loader = DataLoader(dataset=self.test_set, batch_size=self.batch_size)
+        self.train_set, self.test_set = train_config['dataset']
+        self.train_loader = DataLoader(dataset=self.train_set, batch_size=self.batch_size, shuffle=True)
+        self.test_loader = DataLoader(dataset=self.test_set, batch_size=self.batch_size, shuffle=False)
 
         self.model = train_config['model']
         self.loss_function = train_config['loss_function']
@@ -93,7 +92,17 @@ class ModelTrainer():
             input_X, input_Y = dataset[0]
             if self.use_cuda:
                 input_X, input_Y, self.model = input_X.cuda(), input_Y.cuda(), self.model.cuda()
-            torch.onnx.export(self.model, input_X.unsqueeze(0), f'{config["onnx_model_space"]}/{load_model}.onnx', opset_version=18, input_names=['input'], output_names=['output'])
+            torch.onnx.export(
+                self.model, 
+                input_X.unsqueeze(0), 
+                f'{config["onnx_model_space"]}/{load_model}.onnx', 
+                verbose=False, 
+                opset_version=18, 
+                enable_onnx_checker=False, 
+                do_constant_folding=True, 
+                input_names=['input'], 
+                output_names=['output']
+            )
 
 
 trainer = ModelTrainer(train_config=config['AlexNet_MNIST'])
