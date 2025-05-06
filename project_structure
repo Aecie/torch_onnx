@@ -1,0 +1,9 @@
+tensorrt-tutorial/
+├── model_onnx/                # Directory for sample ONNX models
+│   └── sample_model.onnx      # (Will create placeholder)
+├── 1-basic_engine_build.py    # Basic engine building from ONNX
+├── 2-dynamic_shapes.py        # Dynamic shape handling
+├── 3-layer_inspector.py       # Network layer inspection
+├── 4-optimization_profiles.py # Optimization profiles demo
+├── 5-custom_plugin.py         # Custom plugin implementation
+└── utils.py                   # Common utilities 
